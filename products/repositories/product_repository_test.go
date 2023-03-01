@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fahmilukis/go-product-svc/domain"
-	"github.com/fahmilukis/go-product-svc/pkg"
+	pkg "github.com/fahmilukis/go-product-svc/pkg/utils"
 	"github.com/fahmilukis/go-product-svc/products/repositories"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
@@ -38,11 +38,11 @@ func TestFetchRepositoryProduct(t *testing.T) {
 		},
 	}
 
-	rows := sqlmock.NewRows([]string{"id", "product_name", "product_description", "created_at", "updated_at", "product_img_src"}).
+	rows := sqlmock.NewRows([]string{"id", "product_name", "product_desc", "created_at", "updated_at", "product_img_src"}).
 		AddRow(mockProducts[0].ID, mockProducts[0].Name, mockProducts[0].Description, mockProducts[0].CreatedAt, mockProducts[0].UpdatedAt, mockProducts[0].ImageSrc).
 		AddRow(mockProducts[1].ID, mockProducts[1].Name, mockProducts[1].Description, mockProducts[1].CreatedAt, mockProducts[1].UpdatedAt, mockProducts[1].ImageSrc)
 
-	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src
+	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src
 	FROM products WHERE created_at > \$1 ORDER BY created_at LIMIT \$2`
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
@@ -69,7 +69,7 @@ func TestInsertRepositoryProduct(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	query := `INSERT INTO products \(product_name,product_description,created_at,updated_at,product_img_src\) VALUES \(\$1, \$2, \$3, \$4, \$5\)`
+	query := `INSERT INTO products \(product_name,product_desc,created_at,updated_at,product_img_src\) VALUES \(\$1, \$2, \$3, \$4, \$5\)`
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(ar.Name, ar.Description, ar.CreatedAt, ar.UpdatedAt, ar.ImageSrc).WillReturnResult(sqlmock.NewResult(12, 1))
 
@@ -95,7 +95,7 @@ func TestUpdateRepositoryProduct(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	query := `UPDATE products SET product_name=\$1 , product_description=\$2 , created_at=\$3 , updated_at=\$4 , product_img_src=\$5  WHERE id \$6`
+	query := `UPDATE products SET product_name=\$1 , product_desc=\$2 , created_at=\$3 , updated_at=\$4 , product_img_src=\$5  WHERE id \$6`
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(ar.Name, ar.Description, ar.CreatedAt, ar.UpdatedAt, ar.ImageSrc, ar.ID).WillReturnResult(sqlmock.NewResult(12, 1))
 
@@ -132,7 +132,7 @@ func TestGetByIdRepositoryProduct(t *testing.T) {
 	now := time.Now().Add(1)
 
 	rows := sqlmock.NewRows([]string{
-		"id", "product_name", "product_description", "created_at", "updated_at", "product_img_src",
+		"id", "product_name", "product_desc", "created_at", "updated_at", "product_img_src",
 	}).AddRow(
 		"3", "product 1", "desc 1", now, now, "img_src",
 	)
@@ -146,13 +146,13 @@ func TestGetByIdRepositoryProduct(t *testing.T) {
 		ImageSrc:    "img_src",
 	}
 
-	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src from products WHERE id=\$1`
+	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src from products WHERE id=\$1`
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
 	a := repositories.NewProductDBRepository(db)
 
 	num := "3"
-	aProduct, err := a.GetById(context.TODO(), num)
+	aProduct, err := a.GetByID(context.TODO(), num)
 	assert.NoError(t, err)
 	assert.NotNil(t, aProduct)
 	assert.Equal(t, mockData, aProduct)

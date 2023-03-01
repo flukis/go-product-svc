@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/fahmilukis/go-product-svc/domain"
-	"github.com/fahmilukis/go-product-svc/pkg"
+	pkg "github.com/fahmilukis/go-product-svc/pkg/utils"
 	"github.com/sirupsen/logrus"
 
 	_ "github.com/lib/pq"
@@ -57,7 +57,7 @@ func (p *productDBRepositories) fetch(ctx context.Context, query string, args ..
 }
 
 func (p *productDBRepositories) Fetch(ctx context.Context, cursor string, num int64) (res []domain.Products, nextCursor string, err error) {
-	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src
+	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src
 	FROM products WHERE created_at > $1 ORDER BY created_at LIMIT $2`
 
 	decodedCursor, err := pkg.DecodeCursor(cursor)
@@ -77,8 +77,8 @@ func (p *productDBRepositories) Fetch(ctx context.Context, cursor string, num in
 	return
 }
 
-func (p *productDBRepositories) GetById(ctx context.Context, id string) (res domain.Products, err error) {
-	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src from products WHERE id=$1`
+func (p *productDBRepositories) GetByID(ctx context.Context, id string) (res domain.Products, err error) {
+	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src from products WHERE id=$1`
 	list, err := p.fetch(ctx, query, id)
 	if err != nil {
 		return domain.Products{}, err
@@ -94,7 +94,7 @@ func (p *productDBRepositories) GetById(ctx context.Context, id string) (res dom
 }
 
 func (p *productDBRepositories) GetByName(ctx context.Context, name string) (res domain.Products, err error) {
-	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src from products WHERE product_name=?`
+	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src from products WHERE product_name=?`
 	list, err := p.fetch(ctx, query, name)
 	if err != nil {
 		return domain.Products{}, err
@@ -111,13 +111,13 @@ func (p *productDBRepositories) GetByName(ctx context.Context, name string) (res
 
 // insert a record
 func (p *productDBRepositories) Store(ctx context.Context, prd *domain.Products) (err error) {
-	query := `INSERT INTO products (product_name,product_description,created_at,updated_at,product_img_src) VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO products (product_name,product_desc,created_at,updated_at,product_img_src) VALUES ($1, $2, $3, $4, $5) RETURNING id`
 	stmt, err := p.Conn.PrepareContext(ctx, query)
 	if err != nil {
 		return
 	}
 
-	res, err := stmt.ExecContext(
+	row := stmt.QueryRowContext(
 		ctx,
 		prd.Name,
 		prd.Description,
@@ -125,19 +125,17 @@ func (p *productDBRepositories) Store(ctx context.Context, prd *domain.Products)
 		prd.UpdatedAt,
 		prd.ImageSrc,
 	)
-	if err != nil {
+	var id string
+	if err = row.Scan(&id); err != nil {
 		return
 	}
-	lastID, err := res.LastInsertId()
-	if err != nil {
-		return
-	}
-	prd.ID = fmt.Sprint(lastID)
+
+	prd.ID = id
 	return
 }
 
 func (p *productDBRepositories) Update(ctx context.Context, prd *domain.Products) (err error) {
-	query := `UPDATE products SET product_name=$1 , product_description=$2 , created_at=$3 , updated_at=$4 , product_img_src=$5  WHERE id $6`
+	query := `UPDATE products SET product_name=$1 , product_desc=$2 , created_at=$3 , updated_at=$4 , product_img_src=$5  WHERE id $6`
 
 	stmt, err := p.Conn.PrepareContext(ctx, query)
 	if err != nil {

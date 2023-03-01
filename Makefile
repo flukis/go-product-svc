@@ -1,8 +1,8 @@
 build:
-	@go build -o ./build/product-svc
+	@go build -o bin/product
 
 run: build
-	./build/product-svc
+	./bin/product
 
 test:
 	go test -v ./...

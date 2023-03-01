@@ -6,11 +6,11 @@ import (
 )
 
 type Products struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"product_name"`
-	Description string    `json:"product_description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string    `db:"id" json:"id" validate:"required,uuid"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+	Name        string    `db:"product_name" json:"name" validate:"required,lte=255"`
+	Description string    `db:"product_desc" json:"description" validate:"required,lte=255"`
 	ImageSrc    string    `json:"product_img_src"`
 }
 
