@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/fahmilukis/go-product-svc/domain"
-	"github.com/fahmilukis/go-product-svc/pkg/utils"
+	"github.com/fahmilukis/go-product-svc/pkg"
 	"github.com/sirupsen/logrus"
 
 	_ "github.com/lib/pq"
@@ -60,7 +60,7 @@ func (p *productDBRepositories) Fetch(ctx context.Context, cursor string, num in
 	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src
 	FROM products WHERE created_at > $1 ORDER BY created_at LIMIT $2`
 
-	decodedCursor, err := utils.DecodeCursor(cursor)
+	decodedCursor, err := pkg.DecodeCursor(cursor)
 	if err != nil && cursor != "" {
 		return nil, "", domain.ErrBadParamInput
 	}
@@ -71,13 +71,13 @@ func (p *productDBRepositories) Fetch(ctx context.Context, cursor string, num in
 	}
 
 	if len(res) == int(num) {
-		nextCursor = utils.EncodeCursor(res[len(res)-1].CreatedAt)
+		nextCursor = pkg.EncodeCursor(res[len(res)-1].CreatedAt)
 	}
 
 	return
 }
 
-func (p *productDBRepositories) GetById(ctx context.Context, id int64) (res domain.Products, err error) {
+func (p *productDBRepositories) GetById(ctx context.Context, id string) (res domain.Products, err error) {
 	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src from products WHERE id=$1`
 	list, err := p.fetch(ctx, query, id)
 	if err != nil {
@@ -93,7 +93,7 @@ func (p *productDBRepositories) GetById(ctx context.Context, id int64) (res doma
 	return
 }
 
-func (p *productDBRepositories) GetByName(ctx context.Context, name int64) (res domain.Products, err error) {
+func (p *productDBRepositories) GetByName(ctx context.Context, name string) (res domain.Products, err error) {
 	query := `SELECT id,product_name,product_description,created_at,updated_at,product_img_src from products WHERE product_name=?`
 	list, err := p.fetch(ctx, query, name)
 	if err != nil {
@@ -132,7 +132,7 @@ func (p *productDBRepositories) Store(ctx context.Context, prd *domain.Products)
 	if err != nil {
 		return
 	}
-	prd.ID = lastID
+	prd.ID = fmt.Sprint(lastID)
 	return
 }
 
@@ -160,7 +160,7 @@ func (p *productDBRepositories) Update(ctx context.Context, prd *domain.Products
 	return
 }
 
-func (p *productDBRepositories) Delete(ctx context.Context, id int64) (err error) {
+func (p *productDBRepositories) Delete(ctx context.Context, id string) (err error) {
 	query := "DELETE FROM products WHERE id = $1"
 
 	stmt, err := p.Conn.PrepareContext(ctx, query)

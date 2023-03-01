@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fahmilukis/go-product-svc/domain"
-	"github.com/fahmilukis/go-product-svc/pkg/utils"
+	"github.com/fahmilukis/go-product-svc/pkg"
 	"github.com/fahmilukis/go-product-svc/products/repositories"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
@@ -21,7 +21,7 @@ func TestFetchRepositoryProduct(t *testing.T) {
 
 	mockProducts := []domain.Products{
 		{
-			ID:          1,
+			ID:          "1",
 			Name:        "product 1",
 			Description: "description 1",
 			CreatedAt:   now,
@@ -29,7 +29,7 @@ func TestFetchRepositoryProduct(t *testing.T) {
 			ImageSrc:    "img_src_1",
 		},
 		{
-			ID:          2,
+			ID:          "2",
 			Name:        "product 2",
 			Description: "description 2",
 			CreatedAt:   now,
@@ -47,7 +47,7 @@ func TestFetchRepositoryProduct(t *testing.T) {
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
 	a := repositories.NewProductDBRepository(db)
-	cursor := utils.EncodeCursor(mockProducts[1].CreatedAt)
+	cursor := pkg.EncodeCursor(mockProducts[1].CreatedAt)
 	num := int64(2)
 	list, nextCursor, err := a.Fetch(context.TODO(), cursor, num)
 	assert.NotEmpty(t, nextCursor)
@@ -77,13 +77,13 @@ func TestInsertRepositoryProduct(t *testing.T) {
 
 	err = a.Store(context.TODO(), ar)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(12), ar.ID)
+	assert.Equal(t, "12", ar.ID)
 }
 
 func TestUpdateRepositoryProduct(t *testing.T) {
 	now := time.Now()
 	ar := &domain.Products{
-		ID:          12,
+		ID:          "12",
 		Name:        "product test",
 		Description: "description test",
 		CreatedAt:   now,
@@ -114,11 +114,11 @@ func TestDeleteRepositoryProduct(t *testing.T) {
 	query := `DELETE FROM products WHERE id = \$1`
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs(12).WillReturnResult(sqlmock.NewResult(12, 1))
+	prep.ExpectExec().WithArgs("12").WillReturnResult(sqlmock.NewResult(12, 1))
 
 	a := repositories.NewProductDBRepository(db)
 
-	num := int64(12)
+	num := "12"
 	err = a.Delete(context.TODO(), num)
 	assert.NoError(t, err)
 }
@@ -134,11 +134,11 @@ func TestGetByIdRepositoryProduct(t *testing.T) {
 	rows := sqlmock.NewRows([]string{
 		"id", "product_name", "product_description", "created_at", "updated_at", "product_img_src",
 	}).AddRow(
-		3, "product 1", "desc 1", now, now, "img_src",
+		"3", "product 1", "desc 1", now, now, "img_src",
 	)
 
 	mockData := domain.Products{
-		ID:          3,
+		ID:          "3",
 		Name:        "product 1",
 		Description: "desc 1",
 		CreatedAt:   now,
@@ -151,7 +151,7 @@ func TestGetByIdRepositoryProduct(t *testing.T) {
 	mock.ExpectQuery(query).WillReturnRows(rows)
 	a := repositories.NewProductDBRepository(db)
 
-	num := int64(3)
+	num := "3"
 	aProduct, err := a.GetById(context.TODO(), num)
 	assert.NoError(t, err)
 	assert.NotNil(t, aProduct)
