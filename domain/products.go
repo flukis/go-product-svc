@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"time"
+
+	pkg "github.com/fahmilukis/go-product-svc/pkg/utils"
 )
 
 type Products struct {
@@ -10,12 +12,12 @@ type Products struct {
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 	Name        string    `db:"product_name" json:"name" validate:"required,lte=255"`
-	Description string    `db:"product_desc" json:"description" validate:"required,lte=255"`
+	Description string    `db:"product_desc" json:"desc" validate:"required,lte=255"`
 	ImageSrc    string    `json:"product_img_src"`
 }
 
 type ProductUsecase interface {
-	Fetch(ctx context.Context, cursor string, num int64) ([]Products, string, error)
+	Fetch(ctx context.Context, pg pkg.Pagination) ([]Products, pkg.Pagination, error)
 	GetByID(ctx context.Context, id string) (Products, error)
 	GetByName(ctx context.Context, name string) (Products, error)
 	Store(ctx context.Context, p *Products) error
@@ -24,7 +26,7 @@ type ProductUsecase interface {
 }
 
 type ProductRepository interface {
-	Fetch(ctx context.Context, cursor string, num int64) (res []Products, nextCursor string, err error)
+	Fetch(ctx context.Context, pg pkg.Pagination) (res []Products, nextPg pkg.Pagination, err error)
 	GetByID(ctx context.Context, id string) (res Products, err error)
 	GetByName(ctx context.Context, name string) (res Products, err error)
 	Store(ctx context.Context, p *Products) (err error)

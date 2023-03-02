@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fahmilukis/go-product-svc/domain"
+	pkg "github.com/fahmilukis/go-product-svc/pkg/utils"
 )
 
 type productUsecase struct {
@@ -19,17 +20,16 @@ func NewProductUsecase(p domain.ProductRepository, to time.Duration) domain.Prod
 	}
 }
 
-func (p *productUsecase) Fetch(c context.Context, cursor string, num int64) (res []domain.Products, nextCursor string, err error) {
-	if num < 10 {
-		num = 10
-	}
-
+func (p *productUsecase) Fetch(c context.Context, pg pkg.Pagination) (res []domain.Products, nextPkg pkg.Pagination, err error) {
 	ctx, cancel := context.WithTimeout(c, p.ctxTimeout)
 	defer cancel()
 
-	res, nextCursor, err = p.productRepository.Fetch(ctx, cursor, num)
+	res, nextPkg, err = p.productRepository.Fetch(ctx, pg)
 	if err != nil {
-		return nil, "", err
+		return nil, pkg.Pagination{}, err
+	}
+	if len(res) == 0 {
+		return res, pkg.Pagination{}, domain.ErrNotFound
 	}
 
 	return

@@ -21,7 +21,7 @@ func TestFetchRepositoryProduct(t *testing.T) {
 
 	mockProducts := []domain.Products{
 		{
-			ID:          "1",
+			ID:          "1asfgret3",
 			Name:        "product 1",
 			Description: "description 1",
 			CreatedAt:   now,
@@ -29,7 +29,7 @@ func TestFetchRepositoryProduct(t *testing.T) {
 			ImageSrc:    "img_src_1",
 		},
 		{
-			ID:          "2",
+			ID:          "2ag3vagvs",
 			Name:        "product 2",
 			Description: "description 2",
 			CreatedAt:   now,
@@ -43,14 +43,17 @@ func TestFetchRepositoryProduct(t *testing.T) {
 		AddRow(mockProducts[1].ID, mockProducts[1].Name, mockProducts[1].Description, mockProducts[1].CreatedAt, mockProducts[1].UpdatedAt, mockProducts[1].ImageSrc)
 
 	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src
-	FROM products WHERE created_at > \$1 ORDER BY created_at LIMIT \$2`
+	FROM products ORDER BY created_at ASC LIMIT \$1 OFFSET \$2`
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
 	a := repositories.NewProductDBRepository(db)
-	cursor := pkg.EncodeCursor(mockProducts[1].CreatedAt)
-	num := int64(2)
-	list, nextCursor, err := a.Fetch(context.TODO(), cursor, num)
-	assert.NotEmpty(t, nextCursor)
+	pg := pkg.Pagination{
+		Limit: 2,
+		Page:  1,
+	}
+	list, nextPg, err := a.Fetch(context.TODO(), pg)
+	assert.NotEmpty(t, nextPg.Limit)
+	assert.NotEmpty(t, nextPg.Page)
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 }

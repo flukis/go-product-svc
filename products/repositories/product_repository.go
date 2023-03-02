@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 
 	"github.com/fahmilukis/go-product-svc/domain"
 	pkg "github.com/fahmilukis/go-product-svc/pkg/utils"
@@ -56,23 +57,24 @@ func (p *productDBRepositories) fetch(ctx context.Context, query string, args ..
 	return res, nil
 }
 
-func (p *productDBRepositories) Fetch(ctx context.Context, cursor string, num int64) (res []domain.Products, nextCursor string, err error) {
+func (p *productDBRepositories) Fetch(ctx context.Context, pagination pkg.Pagination) (res []domain.Products, nextPagination pkg.Pagination, err error) {
 	query := `SELECT id,product_name,product_desc,created_at,updated_at,product_img_src
-	FROM products WHERE created_at > $1 ORDER BY created_at LIMIT $2`
+	FROM products ORDER BY created_at ASC LIMIT $1 OFFSET $2`
 
-	decodedCursor, err := pkg.DecodeCursor(cursor)
-	if err != nil && cursor != "" {
-		return nil, "", domain.ErrBadParamInput
-	}
-
-	res, err = p.fetch(ctx, query, decodedCursor, num)
+	res, err = p.fetch(ctx, query, pagination.Limit, pagination.GetOffset())
 	if err != nil {
-		return nil, "", err
+		return nil, pkg.Pagination{}, err
 	}
 
-	if len(res) == int(num) {
-		nextCursor = pkg.EncodeCursor(res[len(res)-1].CreatedAt)
-	}
+	var total int64
+	p.Conn.QueryRow(`SELECT reltuples AS estimate FROM pg_class where relname = 'products'`).Scan(&total)
+	nextPagination.TotalRows = total
+
+	totalPages := int(math.Ceil(float64(total) / float64(pagination.Limit)))
+	nextPagination.TotalPages = totalPages
+
+	nextPagination.Limit = pagination.Limit
+	nextPagination.Page = pagination.Page
 
 	return
 }
